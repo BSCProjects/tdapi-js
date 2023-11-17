@@ -1333,12 +1333,13 @@ TDAPI.prototype.getCustomAttributeChoices = function (id) {
  * @param {CustomAttributeChoice} customAttributeChoice - The choice to add to the custom attribute.
  * @returns {Promise<CustomAttributeChoice>}
  */
-TDAPI.prototype.addCustomAttributeChoice = function (id, customAttributeChoice) {
+TDAPI.prototype.addCustomAttributeChoice = function (id, customAttributeChoice, options={}) {
   return this.login()
     .then(bearerToken => {
       return request({
         method: 'POST',
         url: `${this.baseUrl}/attributes/${id}/choices`,
+        qs:options,
         auth: { bearer: bearerToken },
         json: true,
         body: customAttributeChoice || {}
@@ -1358,7 +1359,7 @@ TDAPI.prototype.removeCustomAttributeChoice = function (id, choiceId) {
     .then(bearerToken => {
       return request({
         method: 'DELETE',
-        url: `${this.baseUrl}/attributes/${id}/${choiceId}`,
+        url: `${this.baseUrl}/attributes/${id}/choices/${choiceId}`,
         auth: { bearer: bearerToken },
         json: true
       });
@@ -1373,12 +1374,12 @@ TDAPI.prototype.removeCustomAttributeChoice = function (id, choiceId) {
  * @param {CustomAttributeChoice} customAttributeChoice - The choice with updated values. 
  * @returns {Promise<CustomAttributeChoice>}
  */
-TDAPI.editCustomAttributeChoice = function (id, choiceId, customAttributeChoice) {
+TDAPI.prototype.editCustomAttributeChoice = function (id, choiceId, customAttributeChoice) {
   return this.login()
     .then(bearerToken => {
       return request({
         method: 'PUT',
-        url: `${this.baseUrl}/attributes/${id}/${choiceId}`,
+        url: `${this.baseUrl}/attributes/${id}/choices/${choiceId}`,
         auth: { bearer: bearerToken },
         json: true,
         body: customAttributeChoice || {}
