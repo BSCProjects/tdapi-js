@@ -1,4 +1,4 @@
-var request = require('request-promise');
+var axios = require('axios');
 
 /**
  * Ticket class
@@ -136,13 +136,15 @@ Ticket.prototype.init = function(properties) {
 Ticket.prototype.addAsset = function(assetId) {
   return this.client.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'POST',
         url: `${this.client.baseUrl}/${this.AppID}/tickets/${this.ID}/${assetId}`,
-        auth: { bearer: bearerToken},
-        json: true
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        }
       });
     })
+    .then(response => response.data)
     .catch(handleError);
 };
 
@@ -154,13 +156,15 @@ Ticket.prototype.addAsset = function(assetId) {
 Ticket.prototype.removeAsset = function(assetId) {
   return this.client.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'DELETE',
         url: `${this.client.baseUrl}/${this.AppID}/tickets/${this.ID}/${assetId}`,
-        auth: { bearer: bearerToken },
-        json: true
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        }
       });
     })
+    .then(response => response.data)
     .catch(handleError);
 };
 
@@ -170,15 +174,17 @@ Ticket.prototype.removeAsset = function(assetId) {
  */
 Ticket.prototype.getContacts = function() {
   return this.client.login()
-    .then(bearer => {
-      return request({
+    .then(bearerToken => {
+      return axios({
         method: 'GET',
         url: `${this.client.baseUrl}/${this.AppID}/tickets/${this.ID}/contacts`,
-        auth: { bearer: bearerToken },
-        json: true
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        }
       });
     })
-    .then(contacts => {
+    .then(response => {
+      const contacts = response.data;
       if(Array.isArray(contacts)) {
         return contacts.map(contact => new User(this.client, contact));
       } else {
@@ -196,13 +202,15 @@ Ticket.prototype.getContacts = function() {
 Ticket.prototype.addContact = function(contactUid) {
   return this.client.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'POST',
         url: `${this.client.baseUrl}/${this.AppID}/tickets/${this.ID}/contacts/${contactUid}`,
-        auth: { bearer: bearerToken },
-        json: true
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        }
       });
     })
+    .then(response => response.data)
     .catch(handleError);
 };
 
@@ -212,15 +220,17 @@ Ticket.prototype.addContact = function(contactUid) {
  * @returns {Promise<Object>} message
  */
 Ticket.prototype.removeContact = function(contactUid) {
-  return this.cliemt.login()
+  return this.client.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'DELETE',
         url: `${this.client.baseUrl}/${this.AppID}/tickets/${this.ID}/contacts/${contactUid}`,
-        auth: { bearer: bearerToken },
-        json: true
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        }
       });
     })
+    .then(response => response.data)
     .catch(handleError);
 };
 
@@ -231,13 +241,15 @@ Ticket.prototype.removeContact = function(contactUid) {
 Ticket.prototype.getFeedEntries = function() {
   return this.client.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'GET',
         url: `${this.client.baseUrl}/${this.AppID}/tickets/${this.ID}/feed`,
-        auth: { bearer: bearerToken },
-        json: true
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        }
       });
     })
+    .then(response => response.data)
     .catch(handleError);
 };
 
@@ -249,14 +261,16 @@ Ticket.prototype.getFeedEntries = function() {
 Ticket.prototype.update = function(ticketFeedEntry) {
   return this.client.login()
     .then(bearerToken => {
-      return request({
-        method: 'POST',
-        url: `${this.client.baseUrl}/${this.AppID}/tickets/${this.ID}/feed`,
-        auth: { bearer: bearerToken },
-        json: true,
-        body: ticketFeedEntry
+      return axios({
+        method: 'PATCH',
+        url: `${this.client.baseUrl}/${this.AppID}/tickets/${this.ID}`,
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        },
+        data: ticketFeedEntry
       });
     })
+    .then(response => response.data)
     .catch(handleError);
 };
 
@@ -268,7 +282,7 @@ Ticket.prototype.update = function(ticketFeedEntry) {
 Ticket.prototype.edit = function(notifyNewResponsible) {
   return this.client.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'POST',
         url: `${this.client.baseUrl}/${this.AppID}/tickets/${this.ID}?notifyNewResponsible=${notifyNewResponsible}`,
         auth: { bearer: bearerToken },
@@ -289,7 +303,7 @@ Ticket.prototype.edit = function(notifyNewResponsible) {
 Ticket.prototype.patch = function(notifyNewResponsible, patch) {
   return this.client.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'PATCH',
         url: `${this.client.baseUrl}/${this.AppID}/tickets/${this.ID}?notifyNewResponsible=${notifyNewResponsible}`,
         auth: { bearer: bearerToken },

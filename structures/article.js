@@ -1,4 +1,4 @@
-var request = require('request-promise');
+var axios = require('axios');
 
 /**
  * Article class
@@ -55,17 +55,18 @@ Article.prototype.init = function (properties) {
  * @returns {Promise<Article>}
  */
 Article.prototype.update = async function () {
-  // console.log(this.ID);
   return this.client.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'PUT',
         url: `${this.client.baseUrl}/knowledgebase/${this.ID}`,
-        auth: { bearer: bearerToken },
-        json: true,
-        body: this
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        },
+        data: this
       });
     })
+    .then(response => response.data)
     .catch(handleError);
 };
 
@@ -77,16 +78,18 @@ Article.prototype.update = async function () {
 Article.prototype.getRelated = async function () {
   try {
     let bearerToken = await this.client.login();
-    return request({
+    const response = await axios({
       method: 'GET',
       url: `${this.client.baseUrl}/knowledgebase/${this.ID}/related`,
-      auth: { bearer: bearerToken },
-      json: true
+      headers: {
+        'Authorization': `Bearer ${bearerToken}`
+      }
     });
+    return response.data;
   } catch (err) {
     handleError(err);
   }
-}
+};
 
 // Generic error handling - TODO: Improve error detail
 function handleError(err) {

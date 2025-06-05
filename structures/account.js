@@ -1,4 +1,4 @@
-var request = require('request-promise');
+var axios = require('axios');
 
 /**
  * Account class
@@ -49,14 +49,16 @@ Account.prototype.init = function(properties) {
 Account.prototype.edit = function() {
   return this.client.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'PUT',
         url: `${this.client.baseUrl}/accounts/${this.ID}`,
-        auth: { bearer: bearerToken },
-        json: true,
-        body: this
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        },
+        data: this
       });
     })
+    .then(response => response.data)
     .catch(handleError);
 };
 

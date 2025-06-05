@@ -1,4 +1,4 @@
-var request = require('request-promise');
+var axios = require('axios');
 
 /**
  * Asset class
@@ -68,15 +68,17 @@ Asset.prototype.init = function(properties) {
  * @returns {Promise<Object>} message
  */
 Asset.prototype.removeResource = function(resourceId) {
-  return this.login()
-     .then(bearerToken => {
-      return request({
+  return this.client.login()
+    .then(bearerToken => {
+      return axios({
         method: 'DELETE',
         url: `${this.client.baseUrl}/assets/${this.ID}/users/${resourceId}`,
-        auth: { bearer: bearerToken },
-        json: true
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        }
       });
     })
+    .then(response => response.data)
     .catch(handleError);
 };
 
@@ -85,16 +87,18 @@ Asset.prototype.removeResource = function(resourceId) {
  * @returns {Promise<Asset>}
  */
 Asset.prototype.update = function() {
-  return this.login()
-     .then(bearerToken => {
-      return request({
+  return this.client.login()
+    .then(bearerToken => {
+      return axios({
         method: 'POST',
         url: `${this.client.baseUrl}/assets/${this.ID}`,
-        auth: { bearer: bearerToken },
-        json: true,
-        body: this
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        },
+        data: this
       });
     })
+    .then(response => response.data)
     .catch(handleError);
 };
 
@@ -103,15 +107,17 @@ Asset.prototype.update = function() {
  * @returns {Promise<ItemUpdate>}
  */
 Asset.prototype.getFeedEntries = function() {
-  return this.login()
-     .then(bearerToken => {
-      return request({
+  return this.client.login()
+    .then(bearerToken => {
+      return axios({
         method: 'GET',
         url: `${this.client.baseUrl}/assets/${this.ID}/feed`,
-        auth: { bearer: bearerToken },
-        json: true
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        }
       });
     })
+    .then(response => response.data)
     .catch(handleError);
 };
 
@@ -121,16 +127,18 @@ Asset.prototype.getFeedEntries = function() {
  * @returns {Promise<ItemUpdate>}
  */
 Asset.prototype.addFeedEntry = function(feedEntry) {
-  return this.login()
-     .then(bearerToken => {
-      return request({
+  return this.client.login()
+    .then(bearerToken => {
+      return axios({
         method: 'POST',
         url: `${this.client.baseUrl}/assets/${this.ID}/feed`,
-        auth: { bearer: bearerToken },
-        json: true,
-        body: feedEntry
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        },
+        data: feedEntry
       });
     })
+    .then(response => response.data)
     .catch(handleError);
 };
 
@@ -140,15 +148,17 @@ Asset.prototype.addFeedEntry = function(feedEntry) {
  * @returns {Promise<Object>} message
  */
 Asset.prototype.addToTicket = function(ticketId) {
-  return this.login()
-     .then(bearerToken => {
-      return request({
+  return this.client.login()
+    .then(bearerToken => {
+      return axios({
         method: 'POST',
         url: `${this.client.baseUrl}/assets/${this.ID}/tickets/${ticketId}`,
-        auth: { bearer: bearerToken },
-        json: true
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        }
       });
     })
+    .then(response => response.data)
     .catch(handleError);
 };
 
@@ -158,15 +168,17 @@ Asset.prototype.addToTicket = function(ticketId) {
  * @returns {Promise<Object>} message
  */
 Asset.prototype.removeFromTicket = function(ticketId) {
-  return this.login()
-     .then(bearerToken => {
-      return request({
+  return this.client.login()
+    .then(bearerToken => {
+      return axios({
         method: 'DELETE',
         url: `${this.client.baseUrl}/assets/${this.ID}/tickets/${ticketId}`,
-        auth: { bearer: bearerToken },
-        json: true
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        }
       });
     })
+    .then(response => response.data)
     .catch(handleError);
 };
 
@@ -175,15 +187,17 @@ Asset.prototype.removeFromTicket = function(ticketId) {
  * @returns {Promise<ResourceItem>}
  */
 Asset.prototype.getResources = function() {
-  return this.login()
-     .then(bearerToken => {
-      return request({
+  return this.client.login()
+    .then(bearerToken => {
+      return axios({
         method: 'GET',
         url: `${this.client.baseUrl}/assets/${this.ID}/users`,
-        auth: { bearer: bearerToken },
-        json: true
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        }
       });
     })
+    .then(response => response.data)
     .catch(handleError);
 };
 
@@ -193,15 +207,17 @@ Asset.prototype.getResources = function() {
  * @returns {Promise<Object>} message
  */
 Asset.prototype.addResource = function(resourceId) {
-  return this.login()
-     .then(bearerToken => {
-      return request({
+  return this.client.login()
+    .then(bearerToken => {
+      return axios({
         method: 'POST',
         url: `${this.client.baseUrl}/assets/${this.ID}/users/${resourceId}`,
-        auth: { bearer: bearerToken },
-        json: true
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        }
       });
     })
+    .then(response => response.data)
     .catch(handleError);
 };
 
