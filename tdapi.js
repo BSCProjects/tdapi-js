@@ -1,7 +1,7 @@
 'use strict';
 
 var fs = require('fs');
-var request = require('request-promise');
+var axios = require('axios');
 var jwtDecode = require('jwt-decode');
 
 var User = require('./structures/user');
@@ -52,15 +52,21 @@ TDAPI.prototype.login = function () {
     if (this.bearerToken && !tokenExpired(this.bearerToken)) {
       resolve(this.bearerToken);
     } else {
-      var options = {
+      const formData = new URLSearchParams();
+      for (const key in this.credentials) {
+        formData.append(key, this.credentials[key]);
+      }
+
+      axios({
         method: 'POST',
         url: `${this.baseUrl}/auth` + ('BEID' in this.credentials ? '/loginadmin' : '/login'),
-        form: this.credentials
-      };
-
-      request(options)
-        .then(bearerToken => {
-          resolve(bearerToken);
+        data: formData,
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        }
+      })
+        .then(response => {
+          resolve(response.data);
         })
         .catch(err => {
           reject(err);
@@ -77,14 +83,15 @@ TDAPI.prototype.login = function () {
 TDAPI.prototype.getUser = function (uid) {
   return this.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'GET',
         url: `${this.baseUrl}/people/${uid}`,
-        auth: { bearer: bearerToken },
-        json: true
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        }
       });
     })
-    .then(user => new User(this, user))
+    .then(response => new User(this, response.data))
     .catch(handleError);
 };
 
@@ -96,15 +103,17 @@ TDAPI.prototype.getUser = function (uid) {
 TDAPI.prototype.getUsers = function (searchParams) {
   return this.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'POST',
         url: `${this.baseUrl}/people/search`,
-        auth: { bearer: bearerToken },
-        json: true,
-        body: searchParams || {}
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        },
+        data: searchParams || {}
       });
     })
-    .then(users => {
+    .then(response => {
+      const users = response.data;
       if (Array.isArray(users)) {
         return users.map(user => new User(this, user));
       } else {
@@ -122,15 +131,16 @@ TDAPI.prototype.getUsers = function (searchParams) {
 TDAPI.prototype.createUser = function (user) {
   return this.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'POST',
         url: `${this.baseUrl}/people`,
-        auth: { bearer: bearerToken },
-        json: true,
-        body: user
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        },
+        data: user
       });
     })
-    .then(user => new User(this, user))
+    .then(response => new User(this, response.data))
     .catch(handleError);
 };
 
@@ -142,13 +152,15 @@ TDAPI.prototype.createUser = function (user) {
 TDAPI.prototype.getSecurityRole = function (roleId) {
   return this.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'GET',
         url: `${this.baseUrl}/securityroles/${roleId}`,
-        auth: { bearer: bearerToken },
-        json: true
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        }
       });
     })
+    .then(response => response.data)
     .catch(handleError);
 };
 
@@ -160,14 +172,16 @@ TDAPI.prototype.getSecurityRole = function (roleId) {
 TDAPI.prototype.getSecurityRoles = function (searchParams) {
   return this.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'POST',
         url: `${this.baseUrl}/securityroles/search`,
-        auth: { bearer: bearerToken },
-        json: true,
-        body: searchParams || {}
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        },
+        data: searchParams || {}
       });
     })
+    .then(response => response.data)
     .catch(handleError);
 };
 
@@ -179,13 +193,15 @@ TDAPI.prototype.getSecurityRoles = function (searchParams) {
 TDAPI.prototype.getGroup = function (id) {
   return this.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'GET',
         url: `${this.baseUrl}/groups/${id}`,
-        auth: { bearer: bearerToken },
-        json: true
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        }
       });
     })
+    .then(response => response.data)
     .catch(handleError);
 };
 
@@ -197,14 +213,16 @@ TDAPI.prototype.getGroup = function (id) {
 TDAPI.prototype.createGroup = function (group) {
   return this.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'POST',
         url: `${this.baseUrl}/groups`,
-        auth: { bearer: bearerToken },
-        json: true,
-        body: group || {}
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        },
+        data: group || {}
       });
     })
+    .then(response => response.data)
     .catch(handleError);
 };
 
@@ -217,14 +235,16 @@ TDAPI.prototype.createGroup = function (group) {
 TDAPI.prototype.editGroup = function (id, group) {
   return this.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'PUT',
         url: `${this.baseUrl}/groups/${id}`,
-        auth: { bearer: bearerToken },
-        json: true,
-        body: group || {}
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        },
+        data: group || {}
       });
     })
+    .then(response => response.data)
     .catch(handleError);
 };
 
@@ -237,14 +257,16 @@ TDAPI.prototype.editGroup = function (id, group) {
 TDAPI.prototype.removeFromGroup = function (id, uids) {
   return this.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'DELETE',
         url: `${this.baseUrl}/groups/${id}/members`,
-        auth: { bearer: bearerToken },
-        json: true,
-        body: uids || []
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        },
+        data: uids || []
       });
     })
+    .then(response => response.data)
     .catch(handleError);
 };
 
@@ -256,14 +278,16 @@ TDAPI.prototype.removeFromGroup = function (id, uids) {
 TDAPI.prototype.getGroups = function (searchParams) {
   return this.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'POST',
         url: `${this.baseUrl}/groups/search`,
-        auth: { bearer: bearerToken },
-        json: true,
-        body: searchParams || {}
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        },
+        data: searchParams || {}
       });
     })
+    .then(response => response.data)
     .catch(handleError);
 };
 
@@ -275,14 +299,16 @@ TDAPI.prototype.getGroups = function (searchParams) {
 TDAPI.prototype.getGroupMembers = function (groupId) {
   return this.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'GET',
         url: `${this.baseUrl}/groups/${groupId}/members`,
-        auth: { bearer: bearerToken },
-        json: true
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        }
       });
     })
-    .then(users => {
+    .then(response => {
+      const users = response.data;
       if (Array.isArray(users)) {
         return users.map(user => new User(this, user));
       } else {
@@ -301,14 +327,15 @@ TDAPI.prototype.getGroupMembers = function (groupId) {
 TDAPI.prototype.applyDesktop = function (templateDesktopId, uids, isDefault) {
   return this.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'POST',
         url: `${this.baseUrl}/people/bulk/applydesktop/${templateDesktopId}?isDefault=${isDefault || false}`,
-        auth: { bearer: bearerToken },
-        json: true,
-        body: uids || []
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        },
+        data: uids || []
       });
-    })
+    });
 };
 
 /**
@@ -319,37 +346,39 @@ TDAPI.prototype.applyDesktop = function (templateDesktopId, uids, isDefault) {
 TDAPI.prototype.changeActiveStatus = function (uids, isActive) {
   return this.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'POST',
         url: `${this.baseUrl}/people/bulk/changeactivestatus?isActive=${isActive || false}`,
-        auth: { bearer: bearerToken },
-        json: true,
-        body: uids || []
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        },
+        data: uids || []
       });
-    })
+    });
 };
 
 /**
  * Bulk-adds or removes a set of users to a set of applications. Optionally, supports removing any application associations for users. 
- * @param {Guid[]} userUids            - The UIDs of the people being added to entries in applicationsNames.
+ * @param {Guid[]} userUids            - The UIDs of the people being added to entries in applicationNames.
  * @param {String[]} applicationNames  - The Applications that will be added to each entry in userUids.
  * @param {Boolean} replaceExistingApplications   - Value indicating whether applications that provided users already belong to should be removed.
  */
 TDAPI.prototype.changeApplications = function (userUids, applicationNames, replaceExistingApplications) {
   return this.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'POST',
         url: `${this.baseUrl}/people/bulk/changeapplications`,
-        auth: { bearer: bearerToken },
-        json: true,
-        body: {
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        },
+        data: {
           UserUids: userUids || [],
           ApplicationNames: applicationNames || [],
           ReplaceExistingApplications: replaceExistingApplications || false
         }
       });
-    })
+    });
 };
 
 /**
@@ -361,18 +390,19 @@ TDAPI.prototype.changeApplications = function (userUids, applicationNames, repla
 TDAPI.prototype.manageGroups = function (userUids, groupIds, removeOtherGroups) {
   return this.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'POST',
         url: `${this.baseUrl}/people/bulk/managegroups`,
-        auth: { bearer: bearerToken },
-        json: true,
-        body: {
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        },
+        data: {
           UserUIDs: userUids || [],
           GroupIDs: groupIds || [],
           RemoveOtherGroups: removeOtherGroups || false
         }
       });
-    })
+    });
 };
 
 /**
@@ -388,14 +418,15 @@ TDAPI.prototype.manageGroups = function (userUids, groupIds, removeOtherGroups) 
 TDAPI.prototype.addUsersToGroup = function (id, uids, isPrimary, isNotified, isManager) {
   return this.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'POST',
         url: `${this.baseUrl}/groups/${id}/members?isPrimary=${isPrimary}&isNotified=${isNotified}&isManager=${isManager}`,
-        auth: { bearer: bearerToken },
-        json: true,
-        body: uids || []
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        },
+        data: uids || []
       });
-    })
+    });
 };
 
 /**
@@ -407,18 +438,19 @@ TDAPI.prototype.addUsersToGroup = function (id, uids, isPrimary, isNotified, isM
 TDAPI.prototype.changeAcctDepts = function (userUids, accountIds, replaceExistingAccounts) {
   return this.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'POST',
         url: `${this.baseUrl}/people/bulk/changeacctdepts`,
-        auth: { bearer: bearerToken },
-        json: true,
-        body: {
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        },
+        data: {
           UserUids: userUids || [],
           AccountIDs: accountIds || [],
           ReplaceExistingAccounts: replaceExistingAccounts || false
         }
       });
-    })
+    });
 };
 
 /**
@@ -429,14 +461,15 @@ TDAPI.prototype.changeAcctDepts = function (userUids, accountIds, replaceExistin
 TDAPI.prototype.changeSecurityRole = function (securityRoleId, uids) {
   return this.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'POST',
         url: `${this.baseUrl}/people/bulk/changesecurityrole/${securityRoleId} `,
-        auth: { bearer: bearerToken },
-        json: true,
-        body: uids || []
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        },
+        data: uids || []
       });
-    })
+    });
 };
 
 /**
@@ -457,7 +490,7 @@ TDAPI.prototype.createTicket = function (appId, ticket, options) {
           AllowRequestorCreation: false
         };
       }
-      return request({
+      return axios({
         method: 'POST',
         url: `${this.baseUrl}/${appId}/tickets?` +
           `EnableNotifyReviewer=${options.EnableNotifyReviewer || false}` +
@@ -465,12 +498,13 @@ TDAPI.prototype.createTicket = function (appId, ticket, options) {
           `&NotifyResponsible=${options.NotifyResponsible || false}` +
           `&AutoAssignResponsibility=${options.AutoAssignResponsibility || false}` +
           `&AllowRequestorCreation=${options.AllowRequestorCreation || false}`,
-        auth: { bearer: bearerToken },
-        json: true,
-        body: ticket || {}
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        },
+        data: ticket || {}
       });
     })
-    .then(ticket => new Ticket(this, ticket))
+    .then(response => new Ticket(this, response.data))
     .catch(handleError);
 };
 
@@ -483,14 +517,15 @@ TDAPI.prototype.createTicket = function (appId, ticket, options) {
 TDAPI.prototype.getTicket = function (appId, ticketId) {
   return this.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'GET',
         url: `${this.baseUrl}/${appId}/tickets/${ticketId}`,
-        auth: { bearer: bearerToken },
-        json: true
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        }
       });
     })
-    .then(ticket => new Ticket(this, ticket))
+    .then(response => new Ticket(this, response.data))
     .catch(handleError);
 };
 
@@ -503,15 +538,17 @@ TDAPI.prototype.getTicket = function (appId, ticketId) {
 TDAPI.prototype.getTickets = function (appId, searchParams) {
   return this.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'POST',
         url: `${this.baseUrl}/${appId}/tickets/search`,
-        auth: { bearer: bearerToken },
-        json: true,
-        body: searchParams || {}
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        },
+        data: searchParams || {}
       });
     })
-    .then(tickets => {
+    .then(response => {
+      const tickets = response.data;
       if (Array.isArray(tickets)) {
         return tickets.map(ticket => new Ticket(this, ticket));
       } else {
@@ -532,14 +569,16 @@ TDAPI.prototype.getTickets = function (appId, searchParams) {
 TDAPI.prototype.patchTicket = function (appId, ticketId, patch, notifyNewResponsible) {
   return this.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'PATCH',
         url: `${this.baseUrl}/${appId}/tickets/${ticketId}?notifyNewResponsible=${notifyNewResponsible || false}`,
-        auth: { bearer: bearerToken },
-        json: true,
-        body: patch
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        },
+        data: patch
       });
     })
+    .then(response => response.data)
     .catch(handleError);
 };
 
@@ -553,14 +592,16 @@ TDAPI.prototype.patchTicket = function (appId, ticketId, patch, notifyNewRespons
 TDAPI.prototype.updateTicket = function (appId, ticketId, feedEntry) {
   return this.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'POST',
         url: `${this.baseUrl}/${appId}/tickets/${ticketId}/feed`,
-        auth: { bearer: bearerToken },
-        json: true,
-        body: feedEntry
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        },
+        data: feedEntry
       });
     })
+    .then(response => response.data)
     .catch(handleError);
 };
 
@@ -572,13 +613,15 @@ TDAPI.prototype.updateTicket = function (appId, ticketId, feedEntry) {
 TDAPI.prototype.getTicketTypes = function (appId) {
   return this.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'GET',
         url: `${this.baseUrl}/${appId}/tickets/types`,
-        auth: { bearer: bearerToken },
-        json: true
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        }
       });
     })
+    .then(response => response.data)
     .catch(handleError);
 };
 
@@ -590,13 +633,15 @@ TDAPI.prototype.getTicketTypes = function (appId) {
 TDAPI.prototype.getTicketStatuses = function (appId) {
   return this.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'GET',
         url: `${this.baseUrl}/${appId}/tickets/statuses`,
-        auth: { bearer: bearerToken },
-        json: true
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        }
       });
     })
+    .then(response => response.data)
     .catch(handleError);
 };
 
@@ -607,14 +652,16 @@ TDAPI.prototype.getTicketStatuses = function (appId) {
 TDAPI.prototype.getAccounts = function () {
   return this.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'GET',
         url: `${this.baseUrl}/accounts`,
-        auth: { bearer: bearerToken },
-        json: true
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        }
       });
     })
-    .then(accounts => {
+    .then(response => {
+      const accounts = response.data;
       if (Array.isArray(accounts)) {
         return accounts.map(account => new Account(this, account));
       } else {
@@ -632,14 +679,15 @@ TDAPI.prototype.getAccounts = function () {
 TDAPI.prototype.getAccount = function (id) {
   return this.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'GET',
         url: `${this.baseUrl}/accounts/${id}`,
-        auth: { bearer: bearerToken },
-        json: true
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        }
       });
     })
-    .then(account => new Account(this, account))
+    .then(response => new Account(this, response.data))
     .catch(handleError);
 };
 
@@ -651,14 +699,16 @@ TDAPI.prototype.getAccount = function (id) {
 TDAPI.prototype.createAccount = function (account) {
   return this.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'POST',
         url: `${this.baseUrl}/accounts`,
-        json: true,
-        body: account || {}
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        },
+        data: account || {}
       });
     })
-    .then(account => new Account(this, account))
+    .then(response => new Account(this, response.data))
     .catch(handleError);
 };
 
@@ -671,13 +721,16 @@ TDAPI.prototype.createAccount = function (account) {
 TDAPI.prototype.editAccount = function (id, account) {
   return this.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'PUT',
-        auth: { bearer: bearerToken },
-        json: true,
-        body: account || {}
+        url: `${this.baseUrl}/accounts/${id}`,
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        },
+        data: account || {}
       });
     })
+    .then(response => response.data)
     .catch(handleError);
 };
 
@@ -689,15 +742,17 @@ TDAPI.prototype.editAccount = function (id, account) {
 TDAPI.prototype.searchAccounts = function (searchParams) {
   return this.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'POST',
         url: `${this.baseUrl}/accounts/search`,
-        auth: { bearer: bearerToken },
-        json: true,
-        body: searchParams || {}
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        },
+        data: searchParams || {}
       });
     })
-    .then(accounts => {
+    .then(response => {
+      const accounts = response.data;
       if (Array.isArray(accounts)) {
         return accounts.map(account => new Account(this, account));
       } else {
@@ -715,15 +770,16 @@ TDAPI.prototype.searchAccounts = function (searchParams) {
 TDAPI.prototype.createLocation = function (location) {
   return this.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'POST',
         url: `${this.baseUrl}/locations`,
-        auth: { bearer: bearerToken },
-        json: true,
-        body: location
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        },
+        data: location
       });
     })
-    .then(location => new Location(this, location))
+    .then(response => new Location(this, response.data))
     .catch(handleError);
 };
 
@@ -735,14 +791,15 @@ TDAPI.prototype.createLocation = function (location) {
 TDAPI.prototype.getLocation = function (id) {
   return this.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'GET',
         url: `${this.baseUrl}/locations/${id}`,
-        auth: { bearer: bearerToken },
-        json: true
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        }
       });
     })
-    .then(location => new Location(this, location))
+    .then(response => new Location(this, response.data))
     .catch(handleError);
 };
 
@@ -755,15 +812,16 @@ TDAPI.prototype.getLocation = function (id) {
 TDAPI.prototype.editLocation = function (id, location) {
   return this.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'PUT',
         url: `${this.baseUrl}/locations/${id}`,
-        auth: { bearer: bearerToken },
-        json: true,
-        body: location
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        },
+        data: location
       });
     })
-    .then(location => new Location(this, location))
+    .then(response => new Location(this, response.data))
     .catch(handleError);
 };
 
@@ -776,12 +834,13 @@ TDAPI.prototype.editLocation = function (id, location) {
 TDAPI.prototype.createRoom = function (id, room) {
   return this.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'POST',
         url: `${this.baseUrl}/locations/${id}/rooms`,
-        auth: { bearer: bearerToken },
-        json: true,
-        body: room
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        },
+        data: room
       });
     })
     .catch(handleError);
@@ -796,11 +855,12 @@ TDAPI.prototype.createRoom = function (id, room) {
 TDAPI.prototype.deleteRoom = function (id, roomId) {
   return this.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'DELETE',
         url: `${this.baseUrl}/locations/${id}/rooms/${roomId}`,
-        auth: { bearer: bearerToken },
-        json: true
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        }
       });
     })
     .catch(handleError);
@@ -816,12 +876,13 @@ TDAPI.prototype.deleteRoom = function (id, roomId) {
 TDAPI.prototype.editRoom = function (id, roomId, room) {
   return this.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'PUT',
         url: `${this.baseUrl}/locations/${id}/rooms/${roomId}`,
-        auth: { bearer: bearerToken },
-        json: true,
-        body: room
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        },
+        data: room
       });
     })
     .catch(handleError);
@@ -835,12 +896,13 @@ TDAPI.prototype.editRoom = function (id, roomId, room) {
 TDAPI.prototype.getLocations = function (searchParams) {
   return this.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'POST',
         url: `${this.baseUrl}/locations/search`,
-        auth: { bearer: bearerToken },
-        json: true,
-        body: searchParams || {}
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        },
+        data: searchParams || {}
       });
     })
     .catch(handleError);
@@ -854,13 +916,17 @@ TDAPI.prototype.getLocations = function (searchParams) {
 TDAPI.prototype.importPeople = function (file) {
   return this.login()
     .then(bearerToken => {
-      return request({
+      const formData = new URLSearchParams();
+      formData.append('import.xlsx', fs.createReadStream(file));
+
+      return axios({
         method: 'POST',
         url: `${this.baseUrl}/people/import`,
-        auth: { bearer: bearerToken },
-        formData: {
-          'import.xlsx': fs.createReadStream(file)
-        }
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`,
+          'Content-Type': 'multipart/form-data'
+        },
+        data: formData
       });
     })
     .catch(handleError);
@@ -876,16 +942,18 @@ TDAPI.prototype.importPeople = function (file) {
 TDAPI.prototype.getCustomAttributes = function (componentId, associatedTypeId, appId) {
   return this.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'GET',
         url: `${this.baseUrl}/attributes/custom` +
           `?componentId=${componentId}` +
           `&associatedTypeId=${associatedTypeId}` +
           `&appId=${appId}`,
-        auth: { bearer: bearerToken },
-        json: true
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        }
       });
     })
+    .then(response => response.data)
     .catch(handleError);
 };
 
@@ -896,13 +964,15 @@ TDAPI.prototype.getCustomAttributes = function (componentId, associatedTypeId, a
 TDAPI.prototype.getAssetStatuses = function () {
   return this.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'GET',
         url: `${this.baseUrl}/assets/statuses`,
-        auth: { bearer: bearerToken },
-        json: true
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        }
       });
     })
+    .then(response => response.data)
     .catch(handleError);
 };
 
@@ -914,15 +984,16 @@ TDAPI.prototype.getAssetStatuses = function () {
 TDAPI.prototype.createAsset = function (asset) {
   return this.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'POST',
         url: `${this.baseUrl}/assets`,
-        auth: { bearer: bearerToken },
-        json: true,
-        body: asset
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        },
+        data: asset
       });
     })
-    .then(asset => new Asset(this, asset))
+    .then(response => new Asset(this, response.data))
     .catch(handleError);
 };
 
@@ -935,11 +1006,12 @@ TDAPI.prototype.createAsset = function (asset) {
 TDAPI.prototype.removeAssetResource = function (assetId, resourceId) {
   return this.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'DELETE',
         url: `${this.baseUrl}/assets/${assetId}/users/${resourceId}`,
-        auth: { bearer: bearerToken },
-        json: true
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        }
       });
     })
     .catch(handleError);
@@ -953,14 +1025,15 @@ TDAPI.prototype.removeAssetResource = function (assetId, resourceId) {
 TDAPI.prototype.getAsset = function (id) {
   return this.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'GET',
         url: `${this.baseUrl}/assets/${id}`,
-        auth: { bearer: bearerToken },
-        json: true
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        }
       });
     })
-    .then(asset => new Asset(this, asset))
+    .then(response => new Asset(this, response.data))
     .catch(handleError);
 };
 
@@ -973,15 +1046,16 @@ TDAPI.prototype.getAsset = function (id) {
 TDAPI.prototype.editAsset = function (id, asset) {
   return this.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'POST',
         url: `${this.baseUrl}/assets/${id}`,
-        auth: { bearer: bearerToken },
-        json: true,
-        body: asset
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        },
+        data: asset
       });
     })
-    .then(asset => new Asset(this, asset))
+    .then(response => new Asset(this, response.data))
     .catch(handleError);
 };
 
@@ -993,13 +1067,15 @@ TDAPI.prototype.editAsset = function (id, asset) {
 TDAPI.prototype.getAssetFeedEntries = function (id) {
   return this.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'GET',
         url: `${this.baseUrl}/assets/${id}/feed`,
-        auth: { bearer: bearerToken },
-        json: true
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        }
       });
     })
+    .then(response => response.data)
     .catch(handleError);
 };
 
@@ -1012,14 +1088,16 @@ TDAPI.prototype.getAssetFeedEntries = function (id) {
 TDAPI.prototype.addAssetFeedEntry = function (id, feedEntry) {
   return this.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'POST',
         url: `${this.baseUrl}/assets/${id}/feed`,
-        auth: { bearer: bearerToken },
-        json: true,
-        body: feedEntry
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        },
+        data: feedEntry
       });
     })
+    .then(response => response.data)
     .catch(handleError);
 };
 
@@ -1032,11 +1110,12 @@ TDAPI.prototype.addAssetFeedEntry = function (id, feedEntry) {
 TDAPI.prototype.addAssetToTicket = function (id, ticketId) {
   return this.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'POST',
         url: `${this.baseUrl}/assets/${id}/tickets/${ticketId}`,
-        auth: { bearer: bearerToken },
-        json: true
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        }
       });
     })
     .catch(handleError);
@@ -1052,15 +1131,16 @@ TDAPI.prototype.addAssetToTicket = function (id, ticketId) {
 TDAPI.prototype.getAssetsFromTicket = function (appId, ticketId) {
   return this.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'GET',
         url: `${this.baseUrl}/${appId}/tickets/${ticketId}/assets`,
-        auth: { bearer: bearerToken },
-        json: true
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        }
       });
     })
     .catch(handleError);
-}
+};
 
 /**
  * Removes a ticket from an asset.
@@ -1071,11 +1151,12 @@ TDAPI.prototype.getAssetsFromTicket = function (appId, ticketId) {
 TDAPI.prototype.removeAssetFromTicket = function (id, ticketId) {
   return this.login()
     .then(bearerToken => {
-      return request({
-        method: '',
+      return axios({
+        method: 'DELETE',
         url: `${this.baseUrl}/assets/${id}/tickets/${ticketId}`,
-        auth: { bearer: bearerToken },
-        json: true
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        }
       });
     })
     .catch(handleError);
@@ -1089,11 +1170,12 @@ TDAPI.prototype.removeAssetFromTicket = function (id, ticketId) {
 TDAPI.prototype.getAssetResources = function (id) {
   return this.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'GET',
         url: `${this.baseUrl}/assets/${id}/users`,
-        auth: { bearer: bearerToken },
-        json: true
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        }
       });
     })
     .catch(handleError);
@@ -1108,11 +1190,12 @@ TDAPI.prototype.getAssetResources = function (id) {
 TDAPI.prototype.addAssetResource = function (id, resourceId) {
   return this.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'POST',
         url: `${this.baseUrl}/assets/${id}/users/${resourceId}`,
-        auth: { bearer: bearerToken },
-        json: true
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        }
       });
     })
     .catch(handleError);
@@ -1126,12 +1209,13 @@ TDAPI.prototype.addAssetResource = function (id, resourceId) {
 TDAPI.prototype.importAssets = function (importData) {
   return this.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'POST',
         url: `${this.baseUrl}/assets/import`,
-        auth: { bearer: bearerToken },
-        json: true,
-        body: importData
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        },
+        data: importData
       });
     })
     .catch(handleError);
@@ -1145,15 +1229,17 @@ TDAPI.prototype.importAssets = function (importData) {
 TDAPI.prototype.getAssets = function (searchParams) {
   return this.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'POST',
         url: `${this.baseUrl}/assets/search`,
-        auth: { bearer: bearerToken },
-        json: true,
-        body: searchParams || {}
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        },
+        data: searchParams || {}
       });
     })
-    .then(assets => {
+    .then(response => {
+      const assets = response.data;
       if (Array.isArray(assets)) {
         return assets.map(asset => new Asset(this, asset));
       } else {
@@ -1171,13 +1257,15 @@ TDAPI.prototype.getAssets = function (searchParams) {
 TDAPI.prototype.getVendors = function () {
   return this.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'GET',
         url: `${this.baseUrl}/assets/vendors`,
-        auth: { bearer: bearerToken },
-        json: true
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        }
       });
     })
+    .then(response => response.data)
     .catch(handleError);
 };
 /**
@@ -1188,12 +1276,13 @@ TDAPI.prototype.getVendors = function () {
 TDAPI.prototype.searchVendors = function (query) {
   return this.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'POST',
         url: `${this.baseUrl}/assets/vendors/search`,
-        auth: { bearer: bearerToken },
-        json: true,
-        body: query || {}
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        },
+        data: query || {}
       });
     })
     .catch(handleError);
@@ -1207,11 +1296,12 @@ TDAPI.prototype.searchVendors = function (query) {
 TDAPI.prototype.getVendor = function (id) {
   return this.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'GET',
         url: `${this.baseUrl}/assets/vendors/${id}`,
-        auth: { bearer: bearerToken },
-        json: true
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        }
       });
     })
     .catch(handleError);
@@ -1225,12 +1315,13 @@ TDAPI.prototype.getVendor = function (id) {
 TDAPI.prototype.createVendor = function (vendor) {
   return this.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'POST',
         url: `${this.baseUrl}/assets/vendors`,
-        auth: { bearer: bearerToken },
-        json: true,
-        body: vendor || {}
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        },
+        data: vendor || {}
       });
     })
     .catch(handleError);
@@ -1243,13 +1334,15 @@ TDAPI.prototype.createVendor = function (vendor) {
 TDAPI.prototype.getProductModels = function () {
   return this.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'GET',
         url: `${this.baseUrl}/assets/models`,
-        auth: { bearer: bearerToken },
-        json: true
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        }
       });
     })
+    .then(response => response.data)
     .catch(handleError);
 };
 
@@ -1261,11 +1354,12 @@ TDAPI.prototype.getProductModels = function () {
 TDAPI.prototype.getProductModel = function (id) {
   return this.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'GET',
         url: `${this.baseUrl}/assets/models/${id}`,
-        auth: { bearer: bearerToken },
-        json: true
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        }
       });
     })
     .catch(handleError);
@@ -1279,14 +1373,16 @@ TDAPI.prototype.getProductModel = function (id) {
 TDAPI.prototype.createProductModel = function (productModel) {
   return this.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'POST',
         url: `${this.baseUrl}/assets/models`,
-        auth: { bearer: bearerToken },
-        json: true,
-        body: productModel || {}
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        },
+        data: productModel || {}
       });
     })
+    .then(response => response.data)
     .catch(handleError);
 };
 
@@ -1298,14 +1394,16 @@ TDAPI.prototype.createProductModel = function (productModel) {
 TDAPI.prototype.editProductModel = function (productModel) {
   return this.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'PUT',
         url: `${this.baseUrl}/assets/models/${productModel.ID}`,
-        auth: { bearer: bearerToken },
-        json: true,
-        body: productModel || {}
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        },
+        data: productModel || {}
       });
     })
+    .then(response => response.data)
     .catch(handleError);
 };
 
@@ -1317,13 +1415,15 @@ TDAPI.prototype.editProductModel = function (productModel) {
 TDAPI.prototype.getCustomAttributeChoices = function (id) {
   return this.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'GET',
         url: `${this.baseUrl}/attributes/${id}/choices`,
-        auth: { bearer: bearerToken },
-        json: true
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        }
       });
     })
+    .then(response => response.data)
     .catch(handleError);
 };
 
@@ -1336,15 +1436,17 @@ TDAPI.prototype.getCustomAttributeChoices = function (id) {
 TDAPI.prototype.addCustomAttributeChoice = function (id, customAttributeChoice, options={}) {
   return this.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'POST',
         url: `${this.baseUrl}/attributes/${id}/choices`,
         qs:options,
-        auth: { bearer: bearerToken },
-        json: true,
-        body: customAttributeChoice || {}
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        },
+        data: customAttributeChoice || {}
       });
     })
+    .then(response => response.data)
     .catch(handleError);
 };
 
@@ -1357,11 +1459,12 @@ TDAPI.prototype.addCustomAttributeChoice = function (id, customAttributeChoice, 
 TDAPI.prototype.removeCustomAttributeChoice = function (id, choiceId) {
   return this.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'DELETE',
         url: `${this.baseUrl}/attributes/${id}/choices/${choiceId}`,
-        auth: { bearer: bearerToken },
-        json: true
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        }
       });
     })
     .catch(handleError);
@@ -1377,14 +1480,16 @@ TDAPI.prototype.removeCustomAttributeChoice = function (id, choiceId) {
 TDAPI.prototype.editCustomAttributeChoice = function (id, choiceId, customAttributeChoice) {
   return this.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'PUT',
         url: `${this.baseUrl}/attributes/${id}/choices/${choiceId}`,
-        auth: { bearer: bearerToken },
-        json: true,
-        body: customAttributeChoice || {}
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        },
+        data: customAttributeChoice || {}
       });
     })
+    .then(response => response.data)
     .catch(handleError);
 };
 
@@ -1395,19 +1500,21 @@ TDAPI.prototype.editCustomAttributeChoice = function (id, choiceId, customAttrib
  * @param {Number} [appId]            - The associated application ID to get attributes for.
  * @returns {Promise<CustomAttribute[]>}
  */
-TDAPI.getCustomAttributes = function (componentId, associatedTypeId, appId) {
+TDAPI.prototype.getCustomAttributes = function (componentId, associatedTypeId, appId) {
   return this.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'GET',
         url: `${this.baseUrl}/attributes/custom?` +
           `componentId=${componentId}` +
           `&associatedTypeId=${associatedTypeId || 0}` +
           `&appId=${appId || 0}`,
-        auth: { bearer: bearerToken },
-        json: true
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        }
       });
     })
+    .then(response => response.data)
     .catch(handleError);
 };
 
@@ -1418,13 +1525,15 @@ TDAPI.getCustomAttributes = function (componentId, associatedTypeId, appId) {
 TDAPI.prototype.getReports = function () {
   return this.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'GET',
         url: `${this.baseUrl}/reports`,
-        auth: { bearer: bearerToken },
-        json: true
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        }
       });
     })
+    .then(response => response.data)
     .catch(handleError);
 };
 
@@ -1438,15 +1547,17 @@ TDAPI.prototype.getReports = function () {
 TDAPI.prototype.getReport = function (id, withData, dataSortExpression) {
   return this.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'GET',
         url: `${this.baseUrl}/reports/${id}?` +
           `withData=${withData || false}` +
           `&dataSortExpression=${dataSortExpression || ''}`,
-        auth: { bearer: bearerToken },
-        json: true
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        }
       });
     })
+    .then(response => response.data)
     .catch(handleError);
 };
 
@@ -1458,12 +1569,13 @@ TDAPI.prototype.getReport = function (id, withData, dataSortExpression) {
 TDAPI.prototype.searchReports = function (reportSearch) {
   return this.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'POST',
         url: `${this.baseUrl}/reports/search`,
-        auth: { bearer: bearerToken },
-        json: true,
-        body: reportSearch || {}
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        },
+        data: reportSearch || {}
       });
     })
     .catch(handleError);
@@ -1477,11 +1589,12 @@ TDAPI.prototype.searchReports = function (reportSearch) {
 TDAPI.prototype.getAttachment = function (id) {
   return this.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'GET',
         url: `${this.baseUrl}/attachments/${id}`,
-        auth: { bearer: bearerToken },
-        json: true
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        }
       });
     })
     .catch(handleError);
@@ -1495,11 +1608,12 @@ TDAPI.prototype.getAttachment = function (id) {
 TDAPI.prototype.getAttachmentContents = function (id) {
   return this.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'GET',
         url: `${this.baseUrl}/attachments/${id}/content`,
-        auth: { bearer: bearerToken },
-        json: true
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        }
       });
     })
     .catch(handleError);
@@ -1513,11 +1627,12 @@ TDAPI.prototype.getAttachmentContents = function (id) {
 TDAPI.prototype.deleteAttachment = function (id) {
   return this.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'DELETE',
         url: `${this.baseUrl}/attachments/${id}`,
-        auth: { bearer: bearerToken },
-        json: true
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        }
       });
     })
     .catch(handleError);
@@ -1531,14 +1646,15 @@ TDAPI.prototype.deleteAttachment = function (id) {
 TDAPI.prototype.getArticle = async function (articleID) {
   try {
     let bearerToken = await this.login();
-    let data = await request({
+    let data = await axios({
       method: 'GET',
       url: `${this.baseUrl}/knowledgebase/${articleID}`,
-      auth: { bearer: bearerToken },
-      json: true,
+      headers: {
+        'Authorization': `Bearer ${bearerToken}`
+      }
     });
 
-    return new Article(this, data);
+    return new Article(this, data.data);
   } catch (err) {
     handleError(err);
   }
@@ -1552,12 +1668,13 @@ TDAPI.prototype.getArticle = async function (articleID) {
 TDAPI.prototype.getArticles = async function (searchParams) {
   try {
     let bearerToken = await this.login();
-    return request({
+    return axios({
       method: 'POST',
       url: `${this.baseUrl}/knowledgebase/search`,
-      auth: { bearer: bearerToken },
-      json: true,
-      body: searchParams || {}
+      headers: {
+        'Authorization': `Bearer ${bearerToken}`
+      },
+      data: searchParams || {}
     });
   } catch (err) {
     handleError(err);
@@ -1575,11 +1692,12 @@ TDAPI.prototype.getArticles = async function (searchParams) {
 TDAPI.prototype.getTicketTask = async function (appId, ticketID, taskID) {
   try {
     let bearerToken = await this.login();
-    return request({
+    return axios({
       method: 'GET',
       url: `${this.baseUrl}/${appId}/tickets/${ticketID}/tasks/${taskID}`,
-      auth: { bearer: bearerToken },
-      json: true,
+      headers: {
+        'Authorization': `Bearer ${bearerToken}`
+      }
     });
   } catch (err) {
     handleError(err);
@@ -1598,12 +1716,13 @@ TDAPI.prototype.getTicketTask = async function (appId, ticketID, taskID) {
 TDAPI.prototype.editTicketTask = async function (appId, ticketID, taskID, taskData) {
   try {
     let bearerToken = await this.login();
-    return request({
+    return axios({
       method: 'PUT',
       url: `${this.baseUrl}/${appId}/tickets/${ticketID}/tasks/${taskID}`,
-      auth: { bearer: bearerToken },
-      body: taskData,
-      json: true,
+      headers: {
+        'Authorization': `Bearer ${bearerToken}`
+      },
+      data: taskData
     });
   } catch (err) {
     handleError(err);

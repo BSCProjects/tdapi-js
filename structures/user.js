@@ -1,4 +1,4 @@
-var request = require('request-promise');
+var axios = require('axios');
 var Ticket = require('./ticket');
 
 /**
@@ -97,15 +97,16 @@ User.prototype.init = function(properties) {
 User.prototype.update = function() {
   return this.client.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'POST',
         url: `${this.client.baseUrl}/people/${this.UID}`,
-        auth: { bearer: bearerToken },
-        json: true,
-        body: this
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        },
+        data: this
       });
     })
-    .then(user => new User(this.client, user))
+    .then(response => new User(this.client, response.data))
     .catch(handleError);
 };
 
@@ -116,13 +117,15 @@ User.prototype.update = function() {
 User.prototype.getFunctionalRoles = function() {
   return this.client.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'GET',
         url: `${this.client.baseUrl}/people/${this.UID}/functionalroles`,
-        auth: { bearer: bearerToken },
-        json: true
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        }
       });
     })
+    .then(response => response.data)
     .catch(handleError);
 };
 
@@ -134,13 +137,15 @@ User.prototype.getFunctionalRoles = function() {
 User.prototype.deleteFunctionalRole = function(roleId) {
   return this.client.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'DELETE',
         url: `${this.client.baseUrl}/people/${this.UID}/functionalroles/${roleId}`,
-        auth: { bearer: bearerToken },
-        json: true
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        }
       });
     })
+    .then(response => response.data)
     .catch(handleError);
 };
 
@@ -153,13 +158,15 @@ User.prototype.deleteFunctionalRole = function(roleId) {
 User.prototype.addFunctionalRole = function(roleId, isPrimary) {
   return this.client.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'PUT',
         url: `${this.client.baseUrl}/people/${this.UID}/functionalroles/${roleId}?isPrimary=${isPrimary}`,
-        auth: { bearer: bearerToken },
-        json: true
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        }
       });
     })
+    .then(response => response.data)
     .catch(handleError);
 };
 
@@ -170,13 +177,15 @@ User.prototype.addFunctionalRole = function(roleId, isPrimary) {
 User.prototype.getGroups = function() {
   return this.client.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'GET',
         url: `${this.client.baseUrl}/people/${this.UID}/groups`,
-        auth: { bearer: bearerToken },
-        json: true
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        }
       });
     })
+    .then(response => response.data)
     .catch(handleError);
 };
 
@@ -191,16 +200,18 @@ User.prototype.getGroups = function() {
 User.prototype.addGroup = function(groupId, isPrimary, isNotified, isManager) {
   return this.client.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'PUT',
         url: `${this.client.baseUrl}/people/${this.UID}/groups/${groupId}` + 
               `?isPrimary=${isPrimary || false}` +
               `&isNotified=${isNotified || false}` +
               `&isManager=${isManager || false}`,
-        auth: { bearer: bearerToken },
-        json: true
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        }
       });
     })
+    .then(response => response.data)
     .catch(handleError);
 };
 
@@ -212,13 +223,15 @@ User.prototype.addGroup = function(groupId, isPrimary, isNotified, isManager) {
 User.prototype.removeGroup = function(groupId) {
   return this.client.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'DELETE',
         url: `${this.client.baseUrl}/people/${this.UID}/groups/${groupId}`,
-        auth: { bearer: bearerToken },
-        json: true
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        }
       });
     })
+    .then(response => response.data)
     .catch(handleError);
 };
 
@@ -230,13 +243,15 @@ User.prototype.removeGroup = function(groupId) {
 User.prototype.setActive = function(status) {
   return this.client.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'PUT',
         url: `${this.client.baseUrl}/people/${this.UID}/isactive?status=${status}`,
-        auth: { bearer: bearerToken },
-        json: true
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        }
       });
     })
+    .then(response => response.data)
     .catch(handleError);
 };
 
@@ -249,17 +264,21 @@ User.prototype.setActive = function(status) {
 User.prototype.getTickets = function(appId, searchParams) {
   return this.client.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'POST',
         url: `${this.client.baseUrl}/${appId}/tickets/search`,
-        auth: { bearer: bearerToken },
-        json: true,
-        body: Object.assign({ RequestorUids: [this.UID] }, searchParams || {})
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        },
+        data: searchParams || {}
       });
     })
-    .then(tickets => {
-      if(Array.isArray(tickets)) {
+    .then(response => {
+      const tickets = response.data;
+      if (Array.isArray(tickets)) {
         return tickets.map(ticket => new Ticket(this.client, ticket));
+      } else {
+        return tickets;
       }
     })
     .catch(handleError);

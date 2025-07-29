@@ -1,4 +1,4 @@
-var request = require('request-promise');
+var axios = require('axios');
 
 /**
  * Location class
@@ -50,14 +50,16 @@ Location.prototype.init = function(properties) {
 Location.prototype.edit = function() {
   return this.client.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'PUT',
         url: `${this.client.baseUrl}/locations/${this.ID}`,
-        auth: { bearer: bearerToken },
-        json: true,
-        body: this
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        },
+        data: this
       });
     })
+    .then(response => response.data)
     .catch(handleError);
 };
 
@@ -69,14 +71,16 @@ Location.prototype.edit = function() {
 Location.prototype.createRoom = function(room) {
   return this.client.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'POST',
         url: `${this.client.baseUrl}/locations/${this.ID}/rooms`,
-        auth: { bearer: bearerToken },
-        json: true,
-        body: room
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        },
+        data: room
       });
     })
+    .then(response => response.data)
     .catch(handleError);
 };
 
@@ -88,13 +92,15 @@ Location.prototype.createRoom = function(room) {
 Location.prototype.deleteRoom = function(roomId) {
   return this.client.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'DELETE',
         url: `${this.client.baseUrl}/locations/${this.ID}/rooms/${roomId}`,
-        auth: { bearer: bearerToken },
-        json: true
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        }
       });
     })
+    .then(response => response.data)
     .catch(handleError);
 };
 
@@ -106,13 +112,15 @@ Location.prototype.deleteRoom = function(roomId) {
 Location.prototype.editRoom = function(roomId) {
   return this.client.login()
     .then(bearerToken => {
-      return request({
+      return axios({
         method: 'PUT',
         url: `${this.client.baseUrl}/locations/${this.ID}/rooms/${roomId}`,
-        auth: { bearer: bearerToken },
-        json: true
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`
+        }
       });
     })
+    .then(response => response.data)
     .catch(handleError);
 };
 
